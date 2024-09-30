@@ -1,74 +1,92 @@
-$(document).ready(function() { // Isso é uma função jQuery que garante que todo o código dentro dela só será executado depois que o documento HTML estiver completamente carregado. Isso evita que o JavaScript tente acessar elementos da página que ainda não foram carregados.
+$(document).ready(function() {
+    let editIndex = null;
 
-    let registros = []; //  É um array que armazena os objetos que contêm os dados inseridos no formulário (código, nome, endereço).
-    let editIndex = null; // Armazena o índice do registro que está sendo editado. Se for null, significa que estamos criando um novo registro, e se tiver um valor, estamos editando um registro existente.
+    // Função para salvar os registros no localStorage
+    function salvarNoLocalStorage() {
+        localStorage.setItem('registros', JSON.stringify(registros));
+    }
 
-    // Função para renderizar a tabela de registros
-    function renderTabela() {
-        let tabela = $('#tabelaRegistros tbody'); //Seleciona o corpo (<tbody>) da tabela com o ID #tabelaRegistros usando jQuery.
-        tabela.empty(); // Limpa a tabela antes de renderizar novamente
+    // Função para carregar os registros do localStorage
+    function carregarDoLocalStorage() {
+        const registrosSalvos = localStorage.getItem('registros');
+        return registrosSalvos ? JSON.parse(registrosSalvos) : [];
+    }
+
+    // Inicializa os registros com os dados do localStorage
+    let registros = carregarDoLocalStorage();
+
+    // Função para exibir a tabela com os dados
+    function exibeTabela() {
+        let tabela = $('#myTable tbody');
+        tabela.empty();
 
         registros.forEach(function(registro, index) {
-            tabela.append(`
-                <tr>
-                    <td>${registro.codigo}</td>
+            tabela.append(
+                `<tr>
                     <td>${registro.nome}</td>
+                    <td>${registro.codigo}</td>
                     <td>${registro.endereco}</td>
                     <td>
                         <button class="btn btn-warning btn-sm edit-btn" data-index="${index}">Editar</button>
                         <button class="btn btn-danger btn-sm delete-btn" data-index="${index}">Excluir</button>
                     </td>
-                </tr>
-            `);
+                </tr>`
+            );
         });
     }
 
-    // Função para redefinir o formulário e o botão
-    function resetarFormulario() {
-        $('#registroForm')[0].reset(); // Limpa o formulário
-        $('#submitButton').text('Adicionar Registro'); // Restaura o texto do botão para "Adicionar"
-        editIndex = null; // Limpa o índice de edição
+    // Função para resetar o formulário
+    function resetaForm() {
+        $("#myForm")[0].reset();
+        $("#btnSubmit").text('Adicionar');
+        editIndex = null;
     }
 
-    // Adicionar novo registro ou editar um existente
-    $('#registroForm').submit(function(event) {
+    // Evento de submissão do formulário
+    $("#myForm").submit(function(event) {
         event.preventDefault();
 
-        let codigo = $('#idCodigo').val();
-        let nome = $('#idNome').val();
+        let nome = $("#idNome").val();
+        let codigo = $("#idCodigo").val();
         let endereco = $('#idEndereco').val();
 
         if (editIndex === null) {
-            // Adicionar novo registro
-            registros.push({ codigo, nome, endereco });
+            // Adiciona novo registro
+            registros.push({ nome, codigo, endereco });
         } else {
-            // Editar registro existente
-            registros[editIndex] = { codigo, nome, endereco };
+            // Atualiza registro existente
+            registros[editIndex] = { nome, codigo, endereco };
             editIndex = null;
         }
 
-        resetarFormulario(); // Limpa o formulário e restaura o botão
-        renderTabela(); // Atualizar tabela
+        // Salva os registros no localStorage e atualiza a tabela
+        salvarNoLocalStorage();
+        resetaForm();
+        exibeTabela();
     });
 
-    // Editar registro
+    // Evento para edição de registro
     $(document).on('click', '.edit-btn', function() {
         editIndex = $(this).data('index');
         let registro = registros[editIndex];
 
-        // Preenche o formulário com os valores do registro a ser editado
+        $("#idNome").val(registro.nome);
         $('#idCodigo').val(registro.codigo);
-        $('#idNome').val(registro.nome);
-        $('#idEndereco').val(registro.endereco);
+        $("#idEndereco").val(registro.endereco);
 
-        // Altera o texto do botão para "Atualizar"
-        $('#submitButton').text('Atualizar Registro');
+        $("#btnSubmit").text('Atualizar');
     });
 
-    // Excluir registro
-    $(document).on('click', '.delete-btn', function() {
+    // Evento para exclusão de registro
+    $(document).on("click", ".delete-btn", function() {
         let deleteIndex = $(this).data('index');
-        registros.splice(deleteIndex, 1); // Remove o registro pelo índice
-        renderTabela(); // Atualizar tabela
+        registros.splice(deleteIndex, 1);
+
+        // Salva os registros no localStorage e atualiza a tabela
+        salvarNoLocalStorage();
+        exibeTabela();
     });
+
+    // Exibe a tabela ao carregar a página
+    exibeTabela();
 });
